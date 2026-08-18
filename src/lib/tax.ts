@@ -83,6 +83,7 @@ export const ZERO_TAX_SCHEMES = new Set([
   "REVERSE_CHARGE",
   "IG_LIEFERUNG",
   "IG_LEISTUNG",
+  "DRITTLAND_LEISTUNG",
 ]);
 
 /** Default-Steuerkategorie je Schema (für neue Positionen/Hinweise). */
@@ -96,6 +97,8 @@ export function defaultCategoryForScheme(scheme: string): TaxCategory {
       return "K";
     case "IG_LEISTUNG":
       return "AE";
+    case "DRITTLAND_LEISTUNG":
+      return "Z";
     default:
       return "S";
   }
