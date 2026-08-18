@@ -38,6 +38,7 @@ model Organization {
   bankName          String?
   logoPath          String?
   electronicAddress String? // Peppol-Adresse des Ausstellers
+  language          String  @default("de") // PDF-Sprache: de | en
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

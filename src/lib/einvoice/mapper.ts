@@ -34,6 +34,7 @@ interface MapInput {
     iban: string | null;
     bic: string | null;
     bankName: string | null;
+    language: string | null;
   };
   customer: {
     name: string;
@@ -117,5 +118,6 @@ export function buildEInvoiceData(invoice: MapInput): EInvoiceData {
     iban: invoice.org.iban,
     bic: invoice.org.bic,
     bankName: invoice.org.bankName,
+    language: invoice.org.language ?? "de",
   };
 }
