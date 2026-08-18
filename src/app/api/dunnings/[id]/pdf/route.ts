@@ -22,6 +22,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     sentDate: d.sentAt,
     newDueDate: d.dueDate ?? d.sentAt,
     currency: inv.currency,
+    language: inv.org.language ?? "de",
     seller: {
       name: inv.org.legalName,
       addressLine1: inv.org.addressLine1,
