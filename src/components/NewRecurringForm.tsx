@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { defaultCategoryForScheme, ZERO_TAX_SCHEMES } from "@/lib/tax";
 import { useRouter } from "next/navigation";
 
 interface CustomerOption {
@@ -22,6 +23,15 @@ interface LineState {
   taxRate: number;
 }
 
+const SCHEME_NOTICE_RECURRING: Record<string, string> = {
+  KLEINUNTERNEHMER: "Kleinunternehmer gemäß § 19 UStG, kein Ausweis von Umsatzsteuer",
+  REVERSE_CHARGE: "Steuerschuldnerschaft des Leistungsempfängers",
+  DIFFERENZ: "Gebrauchtgegenstände/Sonderregelung (§ 25a UStG)",
+  IG_LIEFERUNG: "Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1b i.V.m. § 6a UStG)",
+  IG_LEISTUNG: "Steuerfreie innergemeinschaftliche Leistung (§ 13b UStG — Steuerschuldnerschaft des Leistungsempfängers)",
+  DRITTLAND_LEISTUNG: "Nicht im Inland steuerbar gem. § 3a Abs. 2 UStG (Drittland)",
+};
+
 function emptyLine(): LineState {
   return { description: "", quantity: "1", unit: "C62", price: "0", taxRate: 19 };
 }
@@ -40,7 +50,9 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
   const [endDate, setEndDate] = useState("");
   const [paymentTermsDays, setPaymentTermsDays] = useState("14");
   const [autoFinalize, setAutoFinalize] = useState(false);
+  const [scheme, setScheme] = useState("REGULAR");
   const [notes, setNotes] = useState("");
+  const [currency, setCurrency] = useState("EUR");
   const [lines, setLines] = useState<LineState[]>([emptyLine()]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -62,6 +74,8 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
     e.preventDefault();
     setBusy(true);
     setError(null);
+    const notice = SCHEME_NOTICE_RECURRING[scheme];
+    const finalNotes = notice ? `${notice}${notes ? " — " + notes : ""}` : notes || undefined;
     const body = {
       title,
       customerId,
@@ -71,16 +85,16 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
       endDate: endDate || undefined,
       paymentTermsDays: Number(paymentTermsDays) || 14,
       autoFinalize,
-      taxScheme: "REGULAR",
-      currency: "EUR",
-      notes: notes || undefined,
+      taxScheme: scheme,
+      currency: currency,
+      notes: finalNotes,
       lines: lines.map((l) => ({
         description: l.description,
         quantityMilli: toMilli(l.quantity),
         unit: l.unit,
         unitNetPriceCents: toCents(l.price),
-        taxRate: l.taxRate,
-        taxCategory: "S",
+        taxRate: ZERO_TAX_SCHEMES.has(scheme) ? 0 : l.taxRate,
+        taxCategory: defaultCategoryForScheme(scheme),
         discountPermille: 0,
       })),
     };
@@ -118,6 +132,35 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
                 {c.name}
               </option>
             ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-slate-700">Steuerschema</span>
+          <select className={input} value={scheme} onChange={(e) => setScheme(e.target.value)}>
+            <option value="REGULAR">Regelbesteuerung</option>
+            <option value="KLEINUNTERNEHMER">Kleinunternehmer (§ 19)</option>
+            <option value="REVERSE_CHARGE">Reverse Charge (§ 13b)</option>
+            <option value="DIFFERENZ">Differenzbesteuerung (§ 25a)</option>
+            <option value="IG_LIEFERUNG">IG Lieferung (§ 6a)</option>
+            <option value="IG_LEISTUNG">IG Leistung (§ 13b)</option>
+            <option value="DRITTLAND_LEISTUNG">Drittland-Leistung (§ 3a Abs. 2)</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-slate-700">Währung</span>
+          <select className={input} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            <option value="EUR">EUR (€)</option>
+            <option value="USD">USD ($)</option>
+            <option value="CHF">CHF</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+            <option value="SEK">SEK</option>
+            <option value="PLN">PLN</option>
           </select>
         </label>
       </div>
@@ -182,7 +225,7 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
             <input className={`${input} col-span-4 sm:col-span-2`} placeholder="Menge" value={line.quantity} onChange={(e) => patchLine(i, { quantity: e.target.value })} />
             <input className={`${input} col-span-3 sm:col-span-1`} placeholder="Einh." value={line.unit} onChange={(e) => patchLine(i, { unit: e.target.value })} />
             <input className={`${input} col-span-5 sm:col-span-2`} placeholder="Preis netto €" value={line.price} onChange={(e) => patchLine(i, { price: e.target.value })} />
-            <select className={`${input} col-span-8 sm:col-span-1`} value={line.taxRate} onChange={(e) => patchLine(i, { taxRate: Number(e.target.value) })}>
+            <select className={`${input} col-span-8 sm:col-span-1`} value={ZERO_TAX_SCHEMES.has(scheme) ? 0 : line.taxRate} onChange={(e) => patchLine(i, { taxRate: Number(e.target.value) })} disabled={ZERO_TAX_SCHEMES.has(scheme)}>
               <option value={19}>19%</option>
               <option value={7}>7%</option>
               <option value={0}>0%</option>
@@ -197,11 +240,12 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium text-slate-700">Hinweis / Notiz (erscheint auf jeder Rechnung)</span>
         <textarea className={input} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          {SCHEME_NOTICE_RECURRING[scheme] && <span className="text-xs text-slate-500">Pflichthinweis „{SCHEME_NOTICE_RECURRING[scheme]}" wird automatisch ergänzt.</span>}
       </label>
 
       <div className="flex items-center justify-between border-t border-slate-200 pt-4">
         <span className="text-sm text-slate-500">
-          Nettosumme je Rechnung: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} €</span>
+          Nettosumme je Rechnung: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} {currency}</span>
         </span>
         <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60">
           {busy ? "Speichern…" : "Abo anlegen"}
