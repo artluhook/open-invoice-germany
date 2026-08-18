@@ -55,6 +55,7 @@ export interface EInvoiceData {
   iban?: string | null;
   bic?: string | null;
   bankName?: string | null;
+  language?: string; // PDF-Sprache: de | en
   // BG-3 Vorausgehende Rechnung (für Gutschrift/Korrektur, BT-25/BT-26)
   precedingInvoiceNumber?: string | null;
   precedingInvoiceDate?: Date | null;
