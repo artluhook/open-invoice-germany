@@ -72,6 +72,7 @@ async function emitOne(recurringId: string, now: Date, actor: string): Promise<{
         deliveryDate: periodDate,
         dueDate: new Date(now.getTime() + rec.paymentTermsDays * DAY_MS),
         notes: rec.notes,
+        paymentTerms: `Zahlbar innerhalb von ${rec.paymentTermsDays} Tagen ab Rechnungsdatum.`,
         recurringInvoiceId: rec.id,
         netTotalCents: totals.netTotalCents,
         taxTotalCents: totals.taxTotalCents,
