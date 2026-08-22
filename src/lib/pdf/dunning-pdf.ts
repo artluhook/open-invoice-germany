@@ -1,7 +1,7 @@
 /** PDF einer Mahnung / Zahlungserinnerung. */
 import PDFDocument from "pdfkit";
 import { formatCents } from "@/lib/money";
-import { getLabels, formatDate, getLocale, type PdfLabels } from "@/lib/i18n";
+import { getLabels, formatDate, getLocale, countryName, type PdfLabels } from "@/lib/i18n";
 
 export interface DunningPdfData {
   number: string;
@@ -28,6 +28,7 @@ export interface DunningPdfData {
     addressLine2?: string | null;
     postalCode: string;
     city: string;
+    countryCode?: string | null;
   };
   invoiceNumber: string;
   invoiceDate: Date;
@@ -76,6 +77,9 @@ export function renderDunningPdf(data: DunningPdfData): Promise<Buffer> {
     doc.text(data.buyer.addressLine1);
     if (data.buyer.addressLine2) doc.text(data.buyer.addressLine2);
     doc.text(`${data.buyer.postalCode} ${data.buyer.city}`);
+    if (data.buyer.countryCode && data.buyer.countryCode !== "DE") {
+      doc.text(countryName(data.buyer.countryCode, lang));
+    }
 
     doc.fontSize(18).fillColor("#111").text(title, left, 110, { align: "right" });
     doc.fontSize(10).fillColor("#333");

@@ -190,3 +190,42 @@ export function formatDate(date: Date | null | undefined, lang: string): string 
     year: "numeric",
   }).format(date);
 }
+
+const COUNTRY_NAMES: Record<string, string> = {
+  AT: "Österreich",
+  CH: "Schweiz",
+  FR: "Frankreich",
+  IT: "Italien",
+  NL: "Niederlande",
+  BE: "Belgien",
+  LU: "Luxemburg",
+  GB: "Vereinigtes Königreich",
+  US: "Vereinigte Staaten",
+  ES: "Spanien",
+  PT: "Portugal",
+  PL: "Polen",
+  CN: "China",
+  TR: "Türkei",
+};
+
+const COUNTRY_NAMES_EN: Record<string, string> = {
+  AT: "Austria",
+  CH: "Switzerland",
+  FR: "France",
+  IT: "Italy",
+  NL: "Netherlands",
+  BE: "Belgium",
+  LU: "Luxembourg",
+  GB: "United Kingdom",
+  US: "United States",
+  ES: "Spain",
+  PT: "Portugal",
+  PL: "Poland",
+  CN: "China",
+  TR: "Türkiye",
+};
+
+export function countryName(code: string, lang: string): string {
+  const names = lang === "en" ? COUNTRY_NAMES_EN : COUNTRY_NAMES;
+  return names[code] ?? code;
+}
