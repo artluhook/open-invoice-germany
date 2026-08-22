@@ -32,6 +32,7 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? "");
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
+  const [currency, setCurrency] = useState("EUR");
   const [lines, setLines] = useState<LineState[]>([emptyLine()]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -57,7 +58,7 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
       kind,
       customerId,
       taxScheme: "REGULAR",
-      currency: "EUR",
+      currency: currency,
       validUntil: validUntil || undefined,
       notes: notes || undefined,
       lines: lines.map((l) => ({
@@ -116,6 +117,23 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
         </label>
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-slate-700">Währung</span>
+          <select className={input} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            <option value="EUR">EUR (€)</option>
+            <option value="USD">USD ($)</option>
+            <option value="CHF">CHF</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+            <option value="SEK">SEK</option>
+            <option value="PLN">PLN</option>
+          </select>
+        </label>
+      </div>
+
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-slate-900">Positionen</h2>
@@ -160,7 +178,7 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
 
       <div className="flex items-center justify-between border-t border-slate-200 pt-4">
         <span className="text-sm text-slate-500">
-          Nettosumme: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} €</span>
+          Nettosumme: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} {currency}</span>
         </span>
         <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60">
           {busy ? "Speichern…" : "Dokument anlegen"}
