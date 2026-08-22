@@ -7,6 +7,7 @@ import { finalizeAction, cancelAction } from "@/app/actions/invoices";
 import { PaymentForm } from "@/components/PaymentForm";
 import { DunningButton } from "@/components/DunningButton";
 import { DUNNING_LEVEL_TITLE } from "@/lib/dunning";
+import { countryName } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -133,6 +134,9 @@ export default async function InvoiceDetail({
           <p className="text-slate-600">
             {invoice.customer.postalCode} {invoice.customer.city}
           </p>
+          {invoice.customer.countryCode && invoice.customer.countryCode !== "DE" && (
+            <p className="text-slate-600">{countryName(invoice.customer.countryCode, "de")}</p>
+          )}
           {invoice.customer.vatId && <p className="text-slate-500">USt-IdNr.: {invoice.customer.vatId}</p>}
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-5 text-sm">
