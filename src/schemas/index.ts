@@ -16,7 +16,7 @@ export const TaxScheme = z.enum([
 ]);
 export type TaxScheme = z.infer<typeof TaxScheme>;
 
-export const TaxCategory = z.enum(["S", "AE", "K", "G", "E", "Z"]);
+export const TaxCategory = z.enum(["S", "AE", "K", "G", "E", "Z", "O"]);
 export type TaxCategory = z.infer<typeof TaxCategory>;
 
 export const TaxRate = z.union([z.literal(19), z.literal(7), z.literal(0)]);
