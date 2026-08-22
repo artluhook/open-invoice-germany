@@ -12,6 +12,7 @@ export const TaxScheme = z.enum([
   "REVERSE_CHARGE",
   "IG_LIEFERUNG",
   "IG_LEISTUNG",
+  "DRITTLAND_LEISTUNG",
 ]);
 export type TaxScheme = z.infer<typeof TaxScheme>;
 
