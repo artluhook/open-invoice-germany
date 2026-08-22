@@ -161,17 +161,6 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-slate-700">Steuerschema</span>
-          <select className={input} value={scheme} onChange={(e) => setScheme(e.target.value)}>
-            <option value="REGULAR">Regelbesteuerung</option>
-            <option value="KLEINUNTERNEHMER">Kleinunternehmer (§ 19)</option>
-            <option value="REVERSE_CHARGE">Reverse Charge (§ 13b)</option>
-            <option value="DIFFERENZ">Differenzbesteuerung (§ 25a)</option>
-            <option value="IG_LIEFERUNG">IG Lieferung (§ 6a)</option>
-            <option value="IG_LEISTUNG">IG Leistung (§ 13b)</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium text-slate-700">Zahlungsziel (Tage)</span>
           <input className={input} type="number" min={0} max={365} value={paymentTermsDays} onChange={(e) => setPaymentTermsDays(e.target.value)} />
         </label>
