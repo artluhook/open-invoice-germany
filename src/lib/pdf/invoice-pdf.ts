@@ -7,7 +7,7 @@
  */
 import PDFDocument from "pdfkit";
 import { formatCents, formatQuantity } from "@/lib/money";
-import { getLabels, formatDate, getLocale, type PdfLabels } from "@/lib/i18n";
+import { getLabels, formatDate, getLocale, countryName, type PdfLabels } from "@/lib/i18n";
 import type { EInvoiceData } from "@/lib/einvoice/types";
 
 // Dokumenttyp → i18n-Key Mapping
@@ -53,6 +53,9 @@ export function renderInvoicePdf(data: EInvoiceData): Promise<Buffer> {
     doc.text(data.buyer.addressLine1);
     if (data.buyer.addressLine2) doc.text(data.buyer.addressLine2);
     doc.text(`${data.buyer.postalCode} ${data.buyer.city}`);
+    if (data.buyer.countryCode && data.buyer.countryCode !== "DE") {
+      doc.text(countryName(data.buyer.countryCode, lang));
+    }
 
     // Titel + Meta (rechts)
     doc.fontSize(18).fillColor("#111").text(typeLabel(labels, data.type), left, 110, { align: "right" });

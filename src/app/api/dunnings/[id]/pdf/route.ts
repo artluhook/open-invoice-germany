@@ -41,6 +41,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       addressLine2: inv.customer.addressLine2,
       postalCode: inv.customer.postalCode,
       city: inv.customer.city,
+      countryCode: inv.customer.countryCode,
     },
     invoiceNumber: inv.number ?? "",
     invoiceDate: inv.issueDate,
