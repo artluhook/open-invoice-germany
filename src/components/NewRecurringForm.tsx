@@ -36,14 +36,6 @@ const SCHEME_NOTICE_RECURRING: Record<string, string> = {
   IG_LEISTUNG: "Steuerfreie innergemeinschaftliche Leistung (§ 13b UStG — Steuerschuldnerschaft des Leistungsempfängers)",
 };
 
-const SCHEME_CATEGORY_RECURRING: Record<string, string> = {
-  REGULAR: "S",
-  KLEINUNTERNEHMER: "E",
-  REVERSE_CHARGE: "AE",
-  DIFFERENZ: "S",
-  DRITTLAND_LEISTUNG: "O",
-};
-
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -60,13 +52,10 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
   const [autoFinalize, setAutoFinalize] = useState(false);
   const [scheme, setScheme] = useState("REGULAR");
   const [notes, setNotes] = useState("");
-  const [scheme, setScheme] = useState("REGULAR");
   const [currency, setCurrency] = useState("EUR");
   const [lines, setLines] = useState<LineState[]>([emptyLine()]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const isRegular = scheme === "REGULAR";
-
   const toCents = (s: string) => Math.round((parseFloat(s.replace(",", ".")) || 0) * 100);
   const toMilli = (s: string) => Math.round((parseFloat(s.replace(",", ".")) || 0) * 1000);
   const netCents = lines.reduce((sum, l) => sum + Math.round((toMilli(l.quantity) * toCents(l.price)) / 1000), 0);
@@ -96,11 +85,8 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
       paymentTermsDays: Number(paymentTermsDays) || 14,
       autoFinalize,
       taxScheme: scheme,
-      currency: "EUR",
-      notes: finalNotes,
-      taxScheme: "REGULAR",
       currency: currency,
-      notes: notes || undefined,
+      notes: finalNotes,
       lines: lines.map((l) => ({
         description: l.description,
         quantityMilli: toMilli(l.quantity),
@@ -204,6 +190,11 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
             <option value="REVERSE_CHARGE">Reverse Charge (§ 13b)</option>
             <option value="DIFFERENZ">Differenzbesteuerung (§ 25a)</option>
             <option value="DRITTLAND_LEISTUNG">Drittland-Leistung (§ 3a Abs. 2)</option>
+            <option value="IG_LIEFERUNG">IG Lieferung (§ 6a)</option>
+            <option value="IG_LEISTUNG">IG Leistung (§ 13b)</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium text-slate-700">Währung</span>
           <select className={input} value={currency} onChange={(e) => setCurrency(e.target.value)}>
             <option value="EUR">EUR (€)</option>

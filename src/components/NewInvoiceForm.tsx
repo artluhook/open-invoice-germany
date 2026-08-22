@@ -31,14 +31,6 @@ const SCHEME_NOTICE: Record<string, string> = {
   IG_LIEFERUNG: "Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1b i.V.m. § 6a UStG)",
   IG_LEISTUNG: "Steuerfreie innergemeinschaftliche Leistung (§ 13b UStG — Steuerschuldnerschaft des Leistungsempfängers)",
 };
-const SCHEME_CATEGORY: Record<string, string> = {
-  REGULAR: "S",
-  KLEINUNTERNEHMER: "E",
-  REVERSE_CHARGE: "AE",
-  DIFFERENZ: "S",
-  DRITTLAND_LEISTUNG: "O",
-};
-
 function emptyLine(): LineState {
   return { description: "", quantity: "1", unit: "C62", price: "0", taxRate: 19 };
 }

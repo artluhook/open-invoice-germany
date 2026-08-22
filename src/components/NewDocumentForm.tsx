@@ -34,16 +34,6 @@ const SCHEME_NOTICE_DOC: Record<string, string> = {
   DRITTLAND_LEISTUNG: "Leistungsort im Drittland (§ 3a Abs. 2 UStG) — nicht im Inland steuerbar",
 };
 
-const SCHEME_CATEGORY_DOC: Record<string, string> = {
-  REGULAR: "S",
-  KLEINUNTERNEHMER: "E",
-  REVERSE_CHARGE: "AE",
-  DIFFERENZ: "S",
-  DRITTLAND_LEISTUNG: "O",
-  IG_LIEFERUNG: "Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1b i.V.m. § 6a UStG)",
-  IG_LEISTUNG: "Steuerfreie innergemeinschaftliche Leistung (§ 13b UStG — Steuerschuldnerschaft des Leistungsempfängers)",
-};
-
 export function NewDocumentForm({ customers, products }: { customers: CustomerOption[]; products: ProductOption[] }) {
   const router = useRouter();
   const [kind, setKind] = useState("ANGEBOT");
@@ -55,8 +45,6 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
   const [lines, setLines] = useState<LineState[]>([emptyLine()]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const isRegular = scheme === "REGULAR";
-
   const toCents = (s: string) => Math.round((parseFloat(s.replace(",", ".")) || 0) * 100);
   const toMilli = (s: string) => Math.round((parseFloat(s.replace(",", ".")) || 0) * 1000);
   const netCents = lines.reduce((sum, l) => sum + Math.round((toMilli(l.quantity) * toCents(l.price)) / 1000), 0);
