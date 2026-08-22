@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { defaultCategoryForScheme, ZERO_TAX_SCHEMES } from "@/lib/tax";
 import { useRouter } from "next/navigation";
 
 interface CustomerOption {
@@ -27,6 +28,8 @@ const SCHEME_NOTICE: Record<string, string> = {
   REVERSE_CHARGE: "Steuerschuldnerschaft des Leistungsempfängers",
   DIFFERENZ: "Gebrauchtgegenstände/Sonderregelung (§ 25a UStG)",
   DRITTLAND_LEISTUNG: "Leistungsort im Drittland (§ 3a Abs. 2 UStG) — nicht im Inland steuerbar",
+  IG_LIEFERUNG: "Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1b i.V.m. § 6a UStG)",
+  IG_LEISTUNG: "Steuerfreie innergemeinschaftliche Leistung (§ 13b UStG — Steuerschuldnerschaft des Leistungsempfängers)",
 };
 const SCHEME_CATEGORY: Record<string, string> = {
   REGULAR: "S",
@@ -52,7 +55,7 @@ export function NewInvoiceForm({ customers, products }: { customers: CustomerOpt
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const isRegular = scheme === "REGULAR";
+  const isNonRegular = ZERO_TAX_SCHEMES.has(scheme);
   const toCents = (s: string) => Math.round((parseFloat(s.replace(",", ".")) || 0) * 100);
   const toMilli = (s: string) => Math.round((parseFloat(s.replace(",", ".")) || 0) * 1000);
 
@@ -87,8 +90,8 @@ export function NewInvoiceForm({ customers, products }: { customers: CustomerOpt
         quantityMilli: toMilli(l.quantity),
         unit: l.unit,
         unitNetPriceCents: toCents(l.price),
-        taxRate: isRegular ? l.taxRate : 0,
-        taxCategory: SCHEME_CATEGORY[scheme] ?? "S",
+        taxRate: isNonRegular ? 0 : l.taxRate,
+        taxCategory: defaultCategoryForScheme(scheme),
         discountPermille: 0,
       })),
     };
@@ -132,6 +135,8 @@ export function NewInvoiceForm({ customers, products }: { customers: CustomerOpt
             <option value="REVERSE_CHARGE">Reverse Charge (§ 13b)</option>
             <option value="DIFFERENZ">Differenzbesteuerung (§ 25a)</option>
             <option value="DRITTLAND_LEISTUNG">Drittland-Leistung (§ 3a Abs. 2)</option>
+            <option value="IG_LIEFERUNG">IG Lieferung (§ 6a)</option>
+            <option value="IG_LEISTUNG">IG Leistung (§ 13b)</option>
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -175,7 +180,7 @@ export function NewInvoiceForm({ customers, products }: { customers: CustomerOpt
             <input className={`${input} col-span-4 sm:col-span-2`} placeholder="Menge" value={line.quantity} onChange={(e) => patchLine(i, { quantity: e.target.value })} />
             <input className={`${input} col-span-3 sm:col-span-1`} placeholder="Einh." value={line.unit} onChange={(e) => patchLine(i, { unit: e.target.value })} />
             <input className={`${input} col-span-5 sm:col-span-2`} placeholder="Preis netto €" value={line.price} onChange={(e) => patchLine(i, { price: e.target.value })} />
-            <select className={`${input} col-span-8 sm:col-span-1`} value={isRegular ? line.taxRate : 0} onChange={(e) => patchLine(i, { taxRate: Number(e.target.value) })} disabled={!isRegular}>
+            <select className={`${input} col-span-8 sm:col-span-1`} value={isNonRegular ? 0 : line.taxRate} onChange={(e) => patchLine(i, { taxRate: Number(e.target.value) })} disabled={isNonRegular}>
               <option value={19}>19%</option>
               <option value={7}>7%</option>
               <option value={0}>0%</option>
