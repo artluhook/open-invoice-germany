@@ -1,7 +1,7 @@
 /** PDF einer Mahnung / Zahlungserinnerung. */
 import PDFDocument from "pdfkit";
 import { formatCents } from "@/lib/money";
-import { DUNNING_LEVEL_TITLE } from "@/lib/dunning";
+import { getLabels, formatDate, getLocale, type PdfLabels } from "@/lib/i18n";
 
 export interface DunningPdfData {
   number: string;
@@ -9,6 +9,7 @@ export interface DunningPdfData {
   sentDate: Date;
   newDueDate: Date;
   currency: string;
+  language?: string; // de | en
   seller: {
     name: string;
     addressLine1: string;
@@ -38,15 +39,17 @@ export interface DunningPdfData {
   daysOverdue: number;
 }
 
-function deDate(d: Date): string {
-  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
+function levelTitle(labels: PdfLabels, level: number): string {
+  if (level === 0) return labels.dunningLevel0Title;
+  if (level === 1) return labels.dunningLevel1Title;
+  return labels.dunningLevel2Title;
 }
 
-const INTRO: Record<number, (n: string) => string> = {
-  0: (n) => `bei der Durchsicht unserer Unterlagen ist uns aufgefallen, dass die Rechnung ${n} bislang nicht ausgeglichen wurde. Vermutlich ist Ihnen dies entgangen — wir bitten höflich um Begleichung.`,
-  1: (n) => `trotz Fälligkeit ist die Rechnung ${n} bis heute nicht beglichen. Wir fordern Sie auf, den offenen Betrag zuzüglich der entstandenen Verzugskosten bis zum unten genannten Datum zu zahlen.`,
-  2: (n) => `auch nach unserer ersten Mahnung ist die Rechnung ${n} weiterhin offen. Wir setzen Ihnen letztmalig eine Frist zur Zahlung, bevor wir weitere Schritte einleiten.`,
-};
+function introText(labels: PdfLabels, level: number, invoiceNo: string): string {
+  if (level === 0) return labels.dunningIntro0(invoiceNo);
+  if (level === 1) return labels.dunningIntro1(invoiceNo);
+  return labels.dunningIntro2(invoiceNo);
+}
 
 export function renderDunningPdf(data: DunningPdfData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -56,10 +59,13 @@ export function renderDunningPdf(data: DunningPdfData): Promise<Buffer> {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
+    const lang = data.language ?? "de";
+    const labels = getLabels(lang);
+    const locale = getLocale(lang);
     const cur = data.currency;
     const left = 50;
     const right = 545;
-    const title = DUNNING_LEVEL_TITLE[data.level] ?? `${data.level}. Mahnung`;
+    const title = levelTitle(labels, data.level);
 
     doc.fontSize(9).fillColor("#555");
     doc.text(`${data.seller.name} · ${data.seller.addressLine1} · ${data.seller.postalCode} ${data.seller.city}`, left, 50);
@@ -73,12 +79,12 @@ export function renderDunningPdf(data: DunningPdfData): Promise<Buffer> {
 
     doc.fontSize(18).fillColor("#111").text(title, left, 110, { align: "right" });
     doc.fontSize(10).fillColor("#333");
-    doc.text(`Nr.: ${data.number}`, 300, 140, { align: "right" });
-    doc.text(`Datum: ${deDate(data.sentDate)}`, { align: "right" });
+    doc.text(`${labels.dunningNumber}: ${data.number}`, 300, 140, { align: "right" });
+    doc.text(`${labels.dunningDate}: ${formatDate(data.sentDate, lang)}`, { align: "right" });
 
-    doc.fontSize(11).fillColor("#000").text("Sehr geehrte Damen und Herren,", left, 200);
+    doc.fontSize(11).fillColor("#000").text(labels.dunningSalutation, left, 200);
     doc.moveDown(0.5);
-    doc.fontSize(10).fillColor("#333").text((INTRO[data.level] ?? INTRO[2])(data.invoiceNumber), { width: right - left });
+    doc.fontSize(10).fillColor("#333").text(introText(labels, data.level, data.invoiceNumber), { width: right - left });
 
     // Aufstellung
     let y = 290;
@@ -88,18 +94,18 @@ export function renderDunningPdf(data: DunningPdfData): Promise<Buffer> {
       doc.text(value, left + 360, y, { width: right - left - 360, align: "right" });
       y += 16;
     };
-    row(`Rechnung ${data.invoiceNumber} vom ${deDate(data.invoiceDate)} — offener Betrag`, formatCents(data.openAmountCents, cur));
-    if (data.interestCents > 0) row(`Verzugszinsen (${data.daysOverdue} Tage)`, formatCents(data.interestCents, cur));
-    if (data.flatFee40Cents > 0) row("Verzugspauschale (§ 288 Abs. 5 BGB)", formatCents(data.flatFee40Cents, cur));
-    if (data.lateFeeCents > 0) row("Mahnkosten", formatCents(data.lateFeeCents, cur));
+    row(labels.dunningOpenAmount(data.invoiceNumber, formatDate(data.invoiceDate, lang)), formatCents(data.openAmountCents, cur, locale));
+    if (data.interestCents > 0) row(labels.dunningInterest(String(data.daysOverdue)), formatCents(data.interestCents, cur, locale));
+    if (data.flatFee40Cents > 0) row(labels.dunningFlatFee, formatCents(data.flatFee40Cents, cur, locale));
+    if (data.lateFeeCents > 0) row(labels.dunningLateFee, formatCents(data.lateFeeCents, cur, locale));
     y += 4;
     doc.moveTo(left, y).lineTo(right, y).strokeColor("#ccc").stroke();
     y += 6;
-    row("Zahlbarer Gesamtbetrag", formatCents(data.totalCents, cur), true);
+    row(labels.dunningTotal, formatCents(data.totalCents, cur, locale), true);
     doc.font("Helvetica");
 
     y += 16;
-    doc.fontSize(10).fillColor("#000").text(`Bitte überweisen Sie den Gesamtbetrag bis spätestens ${deDate(data.newDueDate)}.`, left, y, { width: right - left });
+    doc.fontSize(10).fillColor("#000").text(labels.dunningDeadline(formatDate(data.newDueDate, lang)), left, y, { width: right - left });
 
     // Fuß: Bank + Aussteller
     const footY = 760;
@@ -107,16 +113,16 @@ export function renderDunningPdf(data: DunningPdfData): Promise<Buffer> {
     const sellerLine = [
       data.seller.name,
       `${data.seller.addressLine1}, ${data.seller.postalCode} ${data.seller.city}`,
-      data.seller.taxNumber ? `Steuernr.: ${data.seller.taxNumber}` : null,
-      data.seller.vatId ? `USt-IdNr.: ${data.seller.vatId}` : null,
+      data.seller.taxNumber ? `${labels.taxNumber}: ${data.seller.taxNumber}` : null,
+      data.seller.vatId ? `${labels.vatId}: ${data.seller.vatId}` : null,
     ]
       .filter(Boolean)
       .join(" · ");
     doc.text(sellerLine, left, footY, { width: right - left, align: "center" });
     const bankLine = [
-      data.seller.bankName ? `Bank: ${data.seller.bankName}` : null,
-      data.seller.iban ? `IBAN: ${data.seller.iban}` : null,
-      data.seller.bic ? `BIC: ${data.seller.bic}` : null,
+      data.seller.bankName ? `${labels.bank}: ${data.seller.bankName}` : null,
+      data.seller.iban ? `${labels.iban}: ${data.seller.iban}` : null,
+      data.seller.bic ? `${labels.bic}: ${data.seller.bic}` : null,
     ]
       .filter(Boolean)
       .join(" · ");
