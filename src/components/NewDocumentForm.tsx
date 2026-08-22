@@ -31,7 +31,6 @@ const SCHEME_NOTICE_DOC: Record<string, string> = {
   KLEINUNTERNEHMER: "Kleinunternehmer gemäß § 19 UStG, kein Ausweis von Umsatzsteuer",
   REVERSE_CHARGE: "Steuerschuldnerschaft des Leistungsempfängers",
   DIFFERENZ: "Gebrauchtgegenstände/Sonderregelung (§ 25a UStG)",
-<<<<<<< HEAD
   DRITTLAND_LEISTUNG: "Leistungsort im Drittland (§ 3a Abs. 2 UStG) — nicht im Inland steuerbar",
 };
 
@@ -41,10 +40,8 @@ const SCHEME_CATEGORY_DOC: Record<string, string> = {
   REVERSE_CHARGE: "AE",
   DIFFERENZ: "S",
   DRITTLAND_LEISTUNG: "O",
-=======
   IG_LIEFERUNG: "Steuerfreie innergemeinschaftliche Lieferung (§ 4 Nr. 1b i.V.m. § 6a UStG)",
   IG_LEISTUNG: "Steuerfreie innergemeinschaftliche Leistung (§ 13b UStG — Steuerschuldnerschaft des Leistungsempfängers)",
->>>>>>> mine/feat/form-tax-scheme-dropdown
 };
 
 export function NewDocumentForm({ customers, products }: { customers: CustomerOption[]; products: ProductOption[] }) {
@@ -54,6 +51,7 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
   const [scheme, setScheme] = useState("REGULAR");
+  const [currency, setCurrency] = useState("EUR");
   const [lines, setLines] = useState<LineState[]>([emptyLine()]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -82,7 +80,7 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
       kind,
       customerId,
       taxScheme: scheme,
-      currency: "EUR",
+      currency: currency,
       validUntil: validUntil || undefined,
       notes: finalNotes,
       lines: lines.map((l) => ({
@@ -90,13 +88,8 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
         quantityMilli: toMilli(l.quantity),
         unit: l.unit,
         unitNetPriceCents: toCents(l.price),
-<<<<<<< HEAD
-        taxRate: isRegular ? l.taxRate : 0,
-        taxCategory: SCHEME_CATEGORY_DOC[scheme] ?? "S",
-=======
         taxRate: ZERO_TAX_SCHEMES.has(scheme) ? 0 : l.taxRate,
         taxCategory: defaultCategoryForScheme(scheme),
->>>>>>> mine/feat/form-tax-scheme-dropdown
         discountPermille: 0,
       })),
     };
@@ -166,6 +159,22 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
             <option value="REVERSE_CHARGE">Reverse Charge (§ 13b)</option>
             <option value="DIFFERENZ">Differenzbesteuerung (§ 25a)</option>
             <option value="DRITTLAND_LEISTUNG">Drittland-Leistung (§ 3a Abs. 2)</option>
+            <option value="IG_LIEFERUNG">IG Lieferung (§ 6a)</option>
+            <option value="IG_LEISTUNG">IG Leistung (§ 13b)</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-slate-700">Währung</span>
+          <select className={input} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            <option value="EUR">EUR (€)</option>
+            <option value="USD">USD ($)</option>
+            <option value="CHF">CHF</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+            <option value="SEK">SEK</option>
+            <option value="PLN">PLN</option>
           </select>
         </label>
       </div>
@@ -195,11 +204,7 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
             <input className={`${input} col-span-4 sm:col-span-2`} placeholder="Menge" value={line.quantity} onChange={(e) => patchLine(i, { quantity: e.target.value })} />
             <input className={`${input} col-span-3 sm:col-span-1`} placeholder="Einh." value={line.unit} onChange={(e) => patchLine(i, { unit: e.target.value })} />
             <input className={`${input} col-span-5 sm:col-span-2`} placeholder="Preis netto €" value={line.price} onChange={(e) => patchLine(i, { price: e.target.value })} />
-<<<<<<< HEAD
-            <select className={`${input} col-span-8 sm:col-span-1`} value={isRegular ? line.taxRate : 0} onChange={(e) => patchLine(i, { taxRate: Number(e.target.value) })} disabled={!isRegular}>
-=======
             <select className={`${input} col-span-8 sm:col-span-1`} value={ZERO_TAX_SCHEMES.has(scheme) ? 0 : line.taxRate} onChange={(e) => patchLine(i, { taxRate: Number(e.target.value) })} disabled={ZERO_TAX_SCHEMES.has(scheme)}>
->>>>>>> mine/feat/form-tax-scheme-dropdown
               <option value={19}>19%</option>
               <option value={7}>7%</option>
               <option value={0}>0%</option>
@@ -219,7 +224,7 @@ export function NewDocumentForm({ customers, products }: { customers: CustomerOp
 
       <div className="flex items-center justify-between border-t border-slate-200 pt-4">
         <span className="text-sm text-slate-500">
-          Nettosumme: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} €</span>
+          Nettosumme: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} {currency}</span>
         </span>
         <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60">
           {busy ? "Speichern…" : "Dokument anlegen"}

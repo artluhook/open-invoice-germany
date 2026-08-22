@@ -61,6 +61,7 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
   const [scheme, setScheme] = useState("REGULAR");
   const [notes, setNotes] = useState("");
   const [scheme, setScheme] = useState("REGULAR");
+  const [currency, setCurrency] = useState("EUR");
   const [lines, setLines] = useState<LineState[]>([emptyLine()]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -97,6 +98,9 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
       taxScheme: scheme,
       currency: "EUR",
       notes: finalNotes,
+      taxScheme: "REGULAR",
+      currency: currency,
+      notes: notes || undefined,
       lines: lines.map((l) => ({
         description: l.description,
         quantityMilli: toMilli(l.quantity),
@@ -200,6 +204,17 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
             <option value="REVERSE_CHARGE">Reverse Charge (§ 13b)</option>
             <option value="DIFFERENZ">Differenzbesteuerung (§ 25a)</option>
             <option value="DRITTLAND_LEISTUNG">Drittland-Leistung (§ 3a Abs. 2)</option>
+          <span className="font-medium text-slate-700">Währung</span>
+          <select className={input} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            <option value="EUR">EUR (€)</option>
+            <option value="USD">USD ($)</option>
+            <option value="CHF">CHF</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+            <option value="SEK">SEK</option>
+            <option value="PLN">PLN</option>
           </select>
         </label>
       </div>
@@ -249,7 +264,7 @@ export function NewRecurringForm({ customers, products }: { customers: CustomerO
 
       <div className="flex items-center justify-between border-t border-slate-200 pt-4">
         <span className="text-sm text-slate-500">
-          Nettosumme je Rechnung: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} €</span>
+          Nettosumme je Rechnung: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} {currency}</span>
         </span>
         <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60">
           {busy ? "Speichern…" : "Abo anlegen"}
