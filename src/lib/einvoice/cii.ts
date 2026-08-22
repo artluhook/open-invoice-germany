@@ -166,7 +166,13 @@ export function buildFacturXCII(data: EInvoiceData): string {
   if (data.iban) {
     const pm = set.ele("ram:SpecifiedTradeSettlementPaymentMeans");
     pm.ele("ram:TypeCode").txt("58").up();
-    pm.ele("ram:PayeePartyCreditorFinancialAccount").ele("ram:IBANID").txt(data.iban).up().up();
+    const acct = pm.ele("ram:PayeePartyCreditorFinancialAccount");
+    acct.ele("ram:IBANID").txt(data.iban).up().up();
+    if (data.bic) {
+      pm.ele("ram:PayeeSpecifiedCreditorFinancialInstitution")
+        .ele("ram:BICID").txt(data.bic).up()
+        .up();
+    }
     pm.up();
   }
   for (const sub of data.taxSubtotals) {
@@ -180,8 +186,14 @@ export function buildFacturXCII(data: EInvoiceData): string {
     t.ele("ram:RateApplicablePercent").txt(String(sub.taxRate)).up();
     t.up();
   }
-  if (data.paymentTerms) {
-    set.ele("ram:SpecifiedTradePaymentTerms").ele("ram:Description").txt(data.paymentTerms).up().up();
+  // BT-9 — Fälligkeitsdatum (Pflicht bei EN 16931 BR-2)
+  if (data.dueDate || data.paymentTerms) {
+    const terms = set.ele("ram:SpecifiedTradePaymentTerms");
+    if (data.paymentTerms) terms.ele("ram:Description").txt(data.paymentTerms).up();
+    if (data.dueDate) {
+      terms.ele("ram:DueDateDateTime").ele("udt:DateTimeString", { format: "102" }).txt(ciiDate(data.dueDate)).up().up();
+    }
+    terms.up();
   }
   const sum = set.ele("ram:SpecifiedTradeSettlementHeaderMonetarySummation");
   sum.ele("ram:LineTotalAmount").txt(amt(data.netTotalCents)).up();

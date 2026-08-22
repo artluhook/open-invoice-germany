@@ -57,7 +57,7 @@ export async function createDraftInvoice(
         dueDate: input.dueDate,
         buyerReference: input.buyerReference,
         notes: input.notes,
-        paymentTerms: input.paymentTerms,
+        paymentTerms: input.paymentTerms ?? "Zahlbar innerhalb von 14 Tagen ab Rechnungsdatum.",
         netTotalCents: totals.netTotalCents,
         taxTotalCents: totals.taxTotalCents,
         grossTotalCents: totals.grossTotalCents,
