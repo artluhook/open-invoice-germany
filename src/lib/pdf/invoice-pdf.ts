@@ -82,7 +82,9 @@ export function renderInvoicePdf(data: EInvoiceData): Promise<Buffer> {
 
     doc.fillColor("#000").fontSize(9);
     data.lines.forEach((line, i) => {
-      const h = 16;
+      // Dynamische Zeilenhöhe bei mehrzeiliger Beschreibung
+      const descHeight = doc.heightOfString(line.description, { width: 220 });
+      const h = Math.max(descHeight + 4, 20);
       doc.text(String(i + 1), left + 4, y, { width: 28 });
       doc.text(line.description, left + 36, y, { width: 220 });
       doc.text(`${formatQuantity(line.quantityMilli, getLocale(lang))} ${line.unit}`, left + 256, y, { width: 50, align: "right" });
