@@ -26,6 +26,7 @@ interface LineState {
 /** Vorbelegung für den Bearbeitungsmodus (Rechnungs-ENTWURF). */
 export interface InvoiceFormInitial {
   customerId?: string;
+  issueDate?: string;
   taxScheme?: string;
   currency?: string;
   deliveryDate?: string;
@@ -63,6 +64,7 @@ export function NewInvoiceForm({
   const isEdit = Boolean(invoiceId);
   const [customerId, setCustomerId] = useState(initial?.customerId ?? customers[0]?.id ?? "");
   const [scheme, setScheme] = useState(initial?.taxScheme ?? "REGULAR");
+  const [issueDate, setIssueDate] = useState(initial?.issueDate ?? "");
   const [deliveryDate, setDeliveryDate] = useState(initial?.deliveryDate ?? "");
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
@@ -103,6 +105,7 @@ export function NewInvoiceForm({
     const body = {
       customerId,
       type: "INVOICE",
+      issueDate: isEdit && issueDate ? issueDate : undefined,
       taxScheme: scheme,
       currency: currency,
       deliveryDate: deliveryDate || undefined,
@@ -177,6 +180,12 @@ export function NewInvoiceForm({
             <option value="PLN">PLN</option>
           </select>
         </label>
+        {isEdit && (
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium text-slate-700">Rechnungsdatum</span>
+            <input type="date" className={input} value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
+          </label>
+        )}
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium text-slate-700">Leistungsdatum</span>
           <input type="date" className={input} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />

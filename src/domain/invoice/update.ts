@@ -63,6 +63,7 @@ export async function updateDraftInvoice(
       data: {
         customerId: input.customerId,
         type: input.type,
+        issueDate: input.issueDate,
         taxScheme: input.taxScheme,
         currency: input.currency,
         deliveryDate: input.deliveryDate,

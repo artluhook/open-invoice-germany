@@ -40,6 +40,7 @@ export default async function EditInvoiceDraftPage({ params }: { params: Promise
 
   const initial: InvoiceFormInitial = {
     customerId: invoice.customerId,
+    issueDate: isoDate(invoice.issueDate),
     taxScheme: invoice.taxScheme,
     currency: invoice.currency,
     deliveryDate: isoDate(invoice.deliveryDate),
