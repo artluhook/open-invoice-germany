@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatCents, formatQuantity } from "@/lib/money";
 import { StatusBadge } from "@/components/StatusBadge";
-import { finalizeAction, cancelAction } from "@/app/actions/invoices";
+import { finalizeAction, cancelAction, deleteDraftAction } from "@/app/actions/invoices";
+import { DeleteDraftButton } from "@/components/DeleteDraftButton";
 import { PaymentForm } from "@/components/PaymentForm";
 import { DunningButton } from "@/components/DunningButton";
 import { DUNNING_LEVEL_TITLE } from "@/lib/dunning";
@@ -90,6 +91,15 @@ export default async function InvoiceDetail({
               ZUGFeRD (PDF)
             </a>
           )}
+          {isDraft && (
+            <Link
+              href={`/rechnungen/${invoice.id}/bearbeiten`}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Bearbeiten
+            </Link>
+          )}
+          {isDraft && <DeleteDraftButton id={invoice.id} action={deleteDraftAction} />}
           {isDraft && (
             <form action={finalizeAction}>
               <input type="hidden" name="id" value={invoice.id} />

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { finalizeInvoice, FinalizeError } from "@/domain/invoice/finalize";
 import { cancelInvoice, CancelError } from "@/domain/invoice/cancel";
+import { deleteDraftInvoice, DeleteDraftError } from "@/domain/invoice/delete";
+import { getActiveOrg } from "@/lib/org";
 
 export async function finalizeAction(formData: FormData) {
   const id = String(formData.get("id"));
@@ -36,4 +38,20 @@ export async function cancelAction(formData: FormData) {
   }
   revalidatePath("/rechnungen");
   redirect(`/rechnungen/${creditId}`);
+}
+
+export async function deleteDraftAction(formData: FormData) {
+  const id = String(formData.get("id"));
+  let errorMessage = "";
+  try {
+    const org = await getActiveOrg();
+    await deleteDraftInvoice(org.id, id);
+  } catch (e) {
+    errorMessage = e instanceof DeleteDraftError ? e.message : "Löschen fehlgeschlagen.";
+  }
+  if (errorMessage) {
+    redirect(`/rechnungen/${id}?error=${encodeURIComponent(errorMessage)}`);
+  }
+  revalidatePath("/rechnungen");
+  redirect("/rechnungen");
 }

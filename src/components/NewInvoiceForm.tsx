@@ -23,6 +23,18 @@ interface LineState {
   taxRate: number;
 }
 
+/** Vorbelegung für den Bearbeitungsmodus (Rechnungs-ENTWURF). */
+export interface InvoiceFormInitial {
+  customerId?: string;
+  taxScheme?: string;
+  currency?: string;
+  deliveryDate?: string;
+  dueDate?: string;
+  notes?: string;
+  paymentTerms?: string;
+  lines?: LineState[];
+}
+
 const SCHEME_NOTICE: Record<string, string> = {
   KLEINUNTERNEHMER: "Kleinunternehmer gemäß § 19 UStG, kein Ausweis von Umsatzsteuer",
   REVERSE_CHARGE: "Steuerschuldnerschaft des Leistungsempfängers",
@@ -35,16 +47,28 @@ function emptyLine(): LineState {
   return { description: "", quantity: "1", unit: "C62", price: "0", taxRate: 19 };
 }
 
-export function NewInvoiceForm({ customers, products }: { customers: CustomerOption[]; products: ProductOption[] }) {
+export function NewInvoiceForm({
+  customers,
+  products,
+  invoiceId,
+  initial,
+}: {
+  customers: CustomerOption[];
+  products: ProductOption[];
+  /** gesetzt im Bearbeitungsmodus: PUT statt POST */
+  invoiceId?: string;
+  initial?: InvoiceFormInitial;
+}) {
   const router = useRouter();
-  const [customerId, setCustomerId] = useState(customers[0]?.id ?? "");
-  const [scheme, setScheme] = useState("REGULAR");
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [notes, setNotes] = useState("");
-  const [paymentTerms, setPaymentTerms] = useState("Zahlbar innerhalb von 14 Tagen ohne Abzug.");
-  const [currency, setCurrency] = useState("EUR");
-  const [lines, setLines] = useState<LineState[]>([emptyLine()]);
+  const isEdit = Boolean(invoiceId);
+  const [customerId, setCustomerId] = useState(initial?.customerId ?? customers[0]?.id ?? "");
+  const [scheme, setScheme] = useState(initial?.taxScheme ?? "REGULAR");
+  const [deliveryDate, setDeliveryDate] = useState(initial?.deliveryDate ?? "");
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [paymentTerms, setPaymentTerms] = useState(initial?.paymentTerms ?? "Zahlbar innerhalb von 14 Tagen ohne Abzug.");
+  const [currency, setCurrency] = useState(initial?.currency ?? "EUR");
+  const [lines, setLines] = useState<LineState[]>(initial?.lines?.length ? initial.lines : [emptyLine()]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -68,7 +92,14 @@ export function NewInvoiceForm({ customers, products }: { customers: CustomerOpt
     setBusy(true);
     setError(null);
     const notice = SCHEME_NOTICE[scheme];
-    const finalNotes = notice ? `${notice}${notes ? " — " + notes : ""}` : notes || undefined;
+    // Bereits vorhandenen Pflichthinweis entfernen, sonst würde er beim erneuten
+    // Speichern doppelt vorangestellt (Bearbeitungsmodus).
+    let notesVal = notes;
+    if (notice && notesVal.startsWith(notice)) {
+      notesVal = notesVal.slice(notice.length);
+      if (notesVal.startsWith(" — ")) notesVal = notesVal.slice(3);
+    }
+    const finalNotes = notice ? `${notice}${notesVal ? " — " + notesVal : ""}` : notesVal || undefined;
     const body = {
       customerId,
       type: "INVOICE",
@@ -88,14 +119,14 @@ export function NewInvoiceForm({ customers, products }: { customers: CustomerOpt
         discountPermille: 0,
       })),
     };
-    const res = await fetch("/api/invoices", {
-      method: "POST",
+    const res = await fetch(isEdit ? `/api/invoices/${invoiceId}` : "/api/invoices", {
+      method: isEdit ? "PUT" : "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
-      setError(j.error ?? "Anlegen fehlgeschlagen.");
+      setError(j.error ?? (isEdit ? "Speichern fehlgeschlagen." : "Anlegen fehlgeschlagen."));
       setBusy(false);
       return;
     }
@@ -216,7 +247,7 @@ export function NewInvoiceForm({ customers, products }: { customers: CustomerOpt
           Nettosumme: <span className="tabular font-medium text-slate-800">{(netCents / 100).toFixed(2)} {currency}</span>
         </span>
         <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60">
-          {busy ? "Speichern…" : "Als Entwurf anlegen"}
+          {busy ? "Speichern…" : isEdit ? "Änderungen speichern" : "Als Entwurf anlegen"}
         </button>
       </div>
     </form>
