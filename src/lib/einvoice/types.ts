@@ -9,6 +9,7 @@ export interface EInvoiceParty {
   countryCode: string; // ISO 3166-1 alpha-2
   vatId?: string | null;
   taxNumber?: string | null;
+  registerNumber?: string | null; // BT-30 Handelsregister-Nr. (erfüllt BR-CO-26 ohne BT-31)
   email?: string | null;
   phone?: string | null;
   contactName?: string | null;

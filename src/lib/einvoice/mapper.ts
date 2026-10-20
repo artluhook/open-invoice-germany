@@ -28,6 +28,7 @@ interface MapInput {
     country: string;
     vatId: string | null;
     taxNumber: string | null;
+    registerNumber: string | null;
     email: string | null;
     phone: string | null;
     electronicAddress: string | null;
@@ -83,6 +84,7 @@ export function buildEInvoiceData(invoice: MapInput): EInvoiceData {
       countryCode: invoice.org.country,
       vatId: invoice.org.vatId,
       taxNumber: invoice.org.taxNumber,
+      registerNumber: invoice.org.registerNumber,
       email: invoice.org.email,
       phone: invoice.org.phone,
       contactName: null,
