@@ -23,6 +23,7 @@ interface DocInput {
     country: string;
     vatId: string | null;
     taxNumber: string | null;
+    registerNumber: string | null;
     email: string | null;
     phone: string | null;
     iban: string | null;
@@ -76,6 +77,7 @@ export function buildDocEInvoiceData(q: DocInput): EInvoiceData {
       countryCode: q.org.country,
       vatId: q.org.vatId,
       taxNumber: q.org.taxNumber,
+      registerNumber: q.org.registerNumber,
       email: q.org.email,
       phone: q.org.phone,
       contactName: null,

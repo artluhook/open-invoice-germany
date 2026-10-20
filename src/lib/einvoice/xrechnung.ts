@@ -101,8 +101,14 @@ function appendParty(
     pts.ele("cac:TaxScheme").ele("cbc:ID").txt("FC").up().up();
   }
 
-  // Registrierter Name (BT-27 / BT-44)
-  p.ele("cac:PartyLegalEntity").ele("cbc:RegistrationName").txt(party.name).up().up();
+  // Registrierter Name (BT-27 / BT-44) — BT-30 Handelsregister-Nr. beim Verkäufer
+  // (erfüllt BR-CO-26, wenn BT-31 bei Kategorie O fehlt)
+  const ple = p.ele("cac:PartyLegalEntity");
+  ple.ele("cbc:RegistrationName").txt(party.name).up();
+  if (isSeller && party.registerNumber) {
+    ple.ele("cbc:CompanyID").txt(party.registerNumber).up();
+  }
+  ple.up();
 
   // BG-6 — Kontakt (für Seller von XRechnung verlangt)
   if (isSeller) {

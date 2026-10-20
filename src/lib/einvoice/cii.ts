@@ -132,6 +132,10 @@ export function buildFacturXCII(data: EInvoiceData): string {
 
   const seller = agr.ele("ram:SellerTradeParty");
   seller.ele("ram:Name").txt(data.seller.name).up();
+  // BT-30 — Handelsregister-Nr.; erfüllt BR-CO-26, wenn BT-31 (USt-IdNr) bei Kategorie O fehlt
+  if (data.seller.registerNumber) {
+    seller.ele("ram:SpecifiedLegalOrganization").ele("ram:ID").txt(data.seller.registerNumber).up().up();
+  }
   appendAddress(seller, data.seller);
   if (data.seller.vatId && !hasOutOfScope) { // BT-31 bei Kategorie O unzulässig (BR-O-02)
     seller.ele("ram:SpecifiedTaxRegistration").ele("ram:ID", { schemeID: "VA" }).txt(data.seller.vatId).up().up();

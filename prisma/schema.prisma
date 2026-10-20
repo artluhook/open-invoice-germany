@@ -29,6 +29,7 @@ model Organization {
   phone             String?
   website           String?
   taxNumber         String? // Steuernummer (§14 Abs.4 Nr.2)
+  registerNumber    String? // Handelsregister-Nr. (BT-30, erfüllt BR-CO-26)
   vatId             String? // USt-IdNr. (§14 Abs.4 Nr.2)
   kuIdNr            String? // §19a Kleinunternehmer-IdNr.
   smallBusiness     Boolean @default(false) // §19 UStG
