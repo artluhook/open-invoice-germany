@@ -65,6 +65,10 @@ export function buildFacturXCII(data: EInvoiceData): string {
   const cur = data.currency;
   const isCredit = data.type === "CREDIT_NOTE";
   const amt = (cents: number) => money(isCredit ? Math.abs(cents) : cents);
+  // Kategorie "O" (nicht steuerbar) verträgt sich nicht mit USt-IdNr (BR-O-02)
+  // und keinem Steuersatz auf Positionen/Header (BR-O-05).
+  const hasOutOfScope =
+    data.lines.some((l) => l.taxCategory === "O") || data.taxSubtotals.some((s) => s.taxCategory === "O");
 
   const root = create({ version: "1.0", encoding: "UTF-8" }).ele("rsm:CrossIndustryInvoice", {
     "xmlns:rsm": NS.rsm,
@@ -115,7 +119,7 @@ export function buildFacturXCII(data: EInvoiceData): string {
     const ltax = ls.ele("ram:ApplicableTradeTax");
     ltax.ele("ram:TypeCode").txt("VAT").up();
     ltax.ele("ram:CategoryCode").txt(line.taxCategory).up();
-    ltax.ele("ram:RateApplicablePercent").txt(String(line.taxRate)).up();
+    if (line.taxCategory !== "O") ltax.ele("ram:RateApplicablePercent").txt(String(line.taxRate)).up(); // BT-152 bei O unzulässig (BR-O-05)
     ltax.up();
     ls.ele("ram:SpecifiedTradeSettlementLineMonetarySummation").ele("ram:LineTotalAmount").txt(amt(line.lineNetCents)).up().up();
     ls.up();
@@ -129,7 +133,7 @@ export function buildFacturXCII(data: EInvoiceData): string {
   const seller = agr.ele("ram:SellerTradeParty");
   seller.ele("ram:Name").txt(data.seller.name).up();
   appendAddress(seller, data.seller);
-  if (data.seller.vatId) {
+  if (data.seller.vatId && !hasOutOfScope) { // BT-31 bei Kategorie O unzulässig (BR-O-02)
     seller.ele("ram:SpecifiedTaxRegistration").ele("ram:ID", { schemeID: "VA" }).txt(data.seller.vatId).up().up();
   }
   if (data.seller.taxNumber) {
@@ -183,7 +187,7 @@ export function buildFacturXCII(data: EInvoiceData): string {
     if (reason) t.ele("ram:ExemptionReason").txt(reason).up();
     t.ele("ram:BasisAmount").txt(amt(sub.netCents)).up();
     t.ele("ram:CategoryCode").txt(sub.taxCategory).up();
-    t.ele("ram:RateApplicablePercent").txt(String(sub.taxRate)).up();
+    if (sub.taxCategory !== "O") t.ele("ram:RateApplicablePercent").txt(String(sub.taxRate)).up(); // BR-O-05
     t.up();
   }
   // BT-9 — Fälligkeitsdatum (Pflicht bei EN 16931 BR-2)
@@ -200,6 +204,8 @@ export function buildFacturXCII(data: EInvoiceData): string {
   sum.ele("ram:TaxBasisTotalAmount").txt(amt(data.netTotalCents)).up();
   sum.ele("ram:TaxTotalAmount", { currencyID: cur }).txt(amt(data.taxTotalCents)).up();
   sum.ele("ram:GrandTotalAmount").txt(amt(data.grossTotalCents)).up();
+  // BT-113 — Anzahlung nur ausgeben, wenn >0 (Pflicht, sobald DuePayable < GrandTotal)
+  if ((data.paidCents ?? 0) > 0) sum.ele("ram:PaidAmount").txt(amt(data.paidCents!)).up();
   sum.ele("ram:DuePayableAmount").txt(amt(data.payableCents)).up();
   sum.up();
   set.up();
