@@ -205,7 +205,7 @@ export function buildFacturXCII(data: EInvoiceData): string {
   sum.ele("ram:TaxTotalAmount", { currencyID: cur }).txt(amt(data.taxTotalCents)).up();
   sum.ele("ram:GrandTotalAmount").txt(amt(data.grossTotalCents)).up();
   // BT-113 — Anzahlung nur ausgeben, wenn >0 (Pflicht, sobald DuePayable < GrandTotal)
-  if ((data.paidCents ?? 0) > 0) sum.ele("ram:PaidAmount").txt(amt(data.paidCents!)).up();
+  if ((data.paidCents ?? 0) > 0) sum.ele("ram:TotalPrepaidAmount").txt(amt(data.paidCents!)).up(); // BT-113: heißt in CII TotalPrepaidAmount
   sum.ele("ram:DuePayableAmount").txt(amt(data.payableCents)).up();
   sum.up();
   set.up();
