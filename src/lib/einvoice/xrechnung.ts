@@ -65,7 +65,12 @@ function exemptionReason(category: string): string | null {
   }
 }
 
-function appendParty(parent: XmlNode, party: EInvoiceData["seller"], isSeller: boolean) {
+function appendParty(
+  parent: XmlNode,
+  party: EInvoiceData["seller"],
+  isSeller: boolean,
+  hasOutOfScope = false,
+) {
   const p = parent.ele("cac:Party");
 
   // BT-34 / BT-49 — elektronische Adresse (Endpoint)
@@ -81,8 +86,9 @@ function appendParty(parent: XmlNode, party: EInvoiceData["seller"], isSeller: b
   postal.ele("cbc:PostalZone").txt(party.postalCode).up();
   postal.ele("cac:Country").ele("cbc:IdentificationCode").txt(party.countryCode).up().up();
 
-  // BT-31/BT-48 — USt-IdNr. (PartyTaxScheme VAT)
-  if (party.vatId) {
+  // BT-31/BT-48 — USt-IdNr. (PartyTaxScheme VAT).
+  // Bei Kategorie "O" unzulässig (BR-O-02) — auch auf Käuferseite.
+  if (party.vatId && !hasOutOfScope) {
     const pts = p.ele("cac:PartyTaxScheme");
     pts.ele("cbc:CompanyID").txt(party.vatId).up();
     pts.ele("cac:TaxScheme").ele("cbc:ID").txt("VAT").up().up();
@@ -121,6 +127,9 @@ export function buildXRechnungUBL(data: EInvoiceData): string {
     : "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2";
   const amt = (cents: number) => money(isCredit ? Math.abs(cents) : cents);
   const qty = (milli: number) => quantity(Math.abs(milli));
+  // Kategorie "O" (nicht steuerbar): keine USt-IdNr (BR-O-02), kein Steuersatz (BR-O-05)
+  const hasOutOfScope =
+    data.lines.some((l) => l.taxCategory === "O") || data.taxSubtotals.some((s) => s.taxCategory === "O");
 
   const root = create({ version: "1.0", encoding: "UTF-8" }).ele(rootName, {
     xmlns: rootNs,
@@ -147,8 +156,8 @@ export function buildXRechnungUBL(data: EInvoiceData): string {
     idr.up().up();
   }
 
-  appendParty(root.ele("cac:AccountingSupplierParty"), data.seller, true);
-  appendParty(root.ele("cac:AccountingCustomerParty"), data.buyer, false);
+  appendParty(root.ele("cac:AccountingSupplierParty"), data.seller, true, hasOutOfScope);
+  appendParty(root.ele("cac:AccountingCustomerParty"), data.buyer, false, hasOutOfScope);
 
   // BG-13 Lieferinformationen — MUSS in der UBL-Reihenfolge NACH den Parteien und
   // VOR PaymentMeans stehen (sonst XSD-fatal -> KoSIT lehnt das Dokument ab).
@@ -180,7 +189,7 @@ export function buildXRechnungUBL(data: EInvoiceData): string {
     st.ele("cbc:TaxAmount", { currencyID: cur }).txt(amt(sub.taxCents)).up();
     const cat = st.ele("cac:TaxCategory");
     cat.ele("cbc:ID").txt(sub.taxCategory).up();
-    cat.ele("cbc:Percent").txt(String(sub.taxRate)).up();
+    if (sub.taxCategory !== "O") cat.ele("cbc:Percent").txt(String(sub.taxRate)).up(); // BR-O-05
     const reason = exemptionReason(sub.taxCategory);
     if (reason) cat.ele("cbc:TaxExemptionReason").txt(reason).up();
     cat.ele("cac:TaxScheme").ele("cbc:ID").txt("VAT").up().up();
@@ -211,7 +220,7 @@ export function buildXRechnungUBL(data: EInvoiceData): string {
     item.ele("cbc:Name").txt(line.description).up();
     const ctc = item.ele("cac:ClassifiedTaxCategory");
     ctc.ele("cbc:ID").txt(line.taxCategory).up();
-    ctc.ele("cbc:Percent").txt(String(line.taxRate)).up();
+    if (line.taxCategory !== "O") ctc.ele("cbc:Percent").txt(String(line.taxRate)).up(); // BR-O-05
     ctc.ele("cac:TaxScheme").ele("cbc:ID").txt("VAT").up().up();
     ctc.up();
     item.up();
