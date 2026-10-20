@@ -191,41 +191,16 @@ export function formatDate(date: Date | null | undefined, lang: string): string 
   }).format(date);
 }
 
-const COUNTRY_NAMES: Record<string, string> = {
-  AT: "Österreich",
-  CH: "Schweiz",
-  FR: "Frankreich",
-  IT: "Italien",
-  NL: "Niederlande",
-  BE: "Belgien",
-  LU: "Luxemburg",
-  GB: "Vereinigtes Königreich",
-  US: "Vereinigte Staaten",
-  ES: "Spanien",
-  PT: "Portugal",
-  PL: "Polen",
-  CN: "China",
-  TR: "Türkei",
-};
-
-const COUNTRY_NAMES_EN: Record<string, string> = {
-  AT: "Austria",
-  CH: "Switzerland",
-  FR: "France",
-  IT: "Italy",
-  NL: "Netherlands",
-  BE: "Belgium",
-  LU: "Luxembourg",
-  GB: "United Kingdom",
-  US: "United States",
-  ES: "Spain",
-  PT: "Portugal",
-  PL: "Poland",
-  CN: "China",
-  TR: "Türkiye",
-};
-
 export function countryName(code: string, lang: string): string {
-  const names = lang === "en" ? COUNTRY_NAMES_EN : COUNTRY_NAMES;
-  return names[code] ?? code;
+  // Intl.DisplayNames deckt alle ISO-3166-Codes ab (auch DK, CZ, ...);
+  // Fallback auf den Code selbst, falls DisplayNames fehlt/kein Name existiert.
+  const locale = lang === "en" ? "en-GB" : "de-DE";
+  try {
+    const dn = new (Intl as unknown as { DisplayNames: new (l: string[], o: { type: string }) => { of: (c: string) => string } }).DisplayNames([locale], { type: "region" });
+    const name = dn.of(code);
+    if (name && name !== code) return name;
+  } catch {
+    // Intl.DisplayNames nicht verfügbar — Code zurückgeben
+  }
+  return code;
 }
