@@ -148,7 +148,7 @@ export function buildFacturXCII(data: EInvoiceData): string {
   const buyer = agr.ele("ram:BuyerTradeParty");
   buyer.ele("ram:Name").txt(data.buyer.name).up();
   appendAddress(buyer, data.buyer);
-  if (data.buyer.vatId) {
+  if (data.buyer.vatId && !hasOutOfScope) { // BT-46 bei Kategorie O unzulässig (BR-O-02) — UBL machte das bereits
     buyer.ele("ram:SpecifiedTaxRegistration").ele("ram:ID", { schemeID: "VA" }).txt(data.buyer.vatId).up().up();
   }
   buyer.up();
